@@ -1,0 +1,39 @@
+{
+  "name": "voice-dictation",
+  "version": "1.0.0",
+  "description": "Voice dictation desktop app powered by faster-whisper",
+  "main": "dist/main/index.js",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:main\" \"npm run dev:renderer\"",
+    "dev:main": "tsc -p tsconfig.main.json --watch",
+    "dev:renderer": "vite",
+    "build": "tsc -p tsconfig.main.json && tsc -p src/preload/tsconfig.json && vite build",
+    "start": "npm run build && electron .",
+    "electron": "electron ."
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "framer-motion": "^11.0.0",
+    "zustand": "^5.0.0",
+    "lucide-react": "^0.400.0",
+    "recharts": "^2.12.0",
+    "react-window": "^1.8.10",
+    "date-fns": "^3.6.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/react-window": "^1.8.8",
+    "@types/ws": "^8.5.10",
+    "concurrently": "^9.0.0"
+  }
+}

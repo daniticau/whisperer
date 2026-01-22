@@ -1,0 +1,38 @@
+# Dictation history (contains personal transcriptions)
+dictation_history.jsonl
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Electron / Node
+electron/node_modules/
+electron/dist/
+electron/.vite/
+
+# Claude Code
+.claude/
+
+# Environment files
+.env
+.env.*
+
+# Logs
+*.log
+
+# App data
+*.db
+*.jsonl.migrated
