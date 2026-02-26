@@ -1,11 +1,13 @@
 import { BrowserWindow } from "electron";
 import WebSocket from "ws";
+import { CursorTracker } from "./cursor-tracker";
 
 export class IpcBridge {
   private ws: WebSocket | null = null;
   private port: number;
   private dashboardWindow: BrowserWindow;
   private indicatorWindow: BrowserWindow;
+  private cursorTracker: CursorTracker;
   private reconnectTimer: NodeJS.Timeout | null = null;
   private reconnectDelay = 100;
 
@@ -17,6 +19,7 @@ export class IpcBridge {
     this.port = port;
     this.dashboardWindow = dashboardWindow;
     this.indicatorWindow = indicatorWindow;
+    this.cursorTracker = new CursorTracker(indicatorWindow);
   }
 
   async connect(): Promise<void> {
@@ -26,6 +29,7 @@ export class IpcBridge {
       this.ws.on("open", () => {
         console.log("WebSocket connected to Python sidecar");
         this.reconnectDelay = 100;
+        this.cursorTracker.start();
         resolve();
       });
 
@@ -57,8 +61,16 @@ export class IpcBridge {
 
     // Forward state changes to indicator window
     if (type === "state_change") {
-      this.sendToWindow(this.indicatorWindow, "dictation-state", message.state);
-      this.sendToWindow(this.dashboardWindow, "dictation-state", message.state);
+      const state = message.state;
+      this.sendToWindow(this.indicatorWindow, "dictation-state", state);
+      this.sendToWindow(this.dashboardWindow, "dictation-state", state);
+
+      // Pause cursor tracker during recording/transcribing to prevent focus theft
+      if (state === "recording" || state === "transcribing") {
+        this.cursorTracker.pause();
+      } else if (state === "idle") {
+        this.cursorTracker.resume();
+      }
     }
 
     // Forward transcription results to dashboard

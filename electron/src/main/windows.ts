@@ -33,13 +33,13 @@ export function createIndicatorWindow(
   url: string,
   display: Display
 ): BrowserWindow {
-  const { width, height } = display.workAreaSize;
+  const { x, y, width, height } = display.workArea;
 
   const win = new BrowserWindow({
     width: 80,
     height: 48,
-    x: Math.round((width - 80) / 2),
-    y: height - 80,
+    x: x + Math.round((width - 80) / 2),
+    y: y + height - 48,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -47,6 +47,7 @@ export function createIndicatorWindow(
     resizable: false,
     focusable: false,
     hasShadow: false,
+    show: true,
     webPreferences: {
       preload: preloadPath,
       nodeIntegration: false,

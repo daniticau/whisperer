@@ -1,4 +1,5 @@
 import { spawn, ChildProcess } from "child_process";
+import { app } from "electron";
 import * as path from "path";
 
 export class PythonSidecar {
@@ -7,11 +8,24 @@ export class PythonSidecar {
 
   async start(): Promise<number> {
     return new Promise((resolve, reject) => {
-      const projectRoot = path.resolve(__dirname, "../../..");
+      let command: string;
+      let args: string[];
+      let cwd: string;
 
-      this.process = spawn("python", ["-m", "python", "--port", "0"], {
-        cwd: projectRoot,
+      if (app.isPackaged) {
+        command = path.join(process.resourcesPath, "python-backend", "python-backend.exe");
+        args = ["--port", "0"];
+        cwd = path.dirname(command);
+      } else {
+        command = "python";
+        args = ["-m", "python", "--port", "0"];
+        cwd = path.resolve(__dirname, "../../..");
+      }
+
+      this.process = spawn(command, args, {
+        cwd,
         stdio: ["pipe", "pipe", "pipe"],
+        windowsHide: true,
       });
 
       let resolved = false;
