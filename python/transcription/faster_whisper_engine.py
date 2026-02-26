@@ -17,13 +17,11 @@ MODELS = {
 def _resolve_device(device: str, model_size: str) -> tuple[str, str]:
     if device == "auto":
         try:
-            import torch
-            if torch.cuda.is_available():
-                vram = torch.cuda.get_device_properties(0).total_memory / 1e6
-                needed = MODELS.get(model_size, {}).get("vram_mb", 500)
-                if vram > needed * 1.2:
-                    return "cuda", "float16"
-        except ImportError:
+            import ctranslate2
+            cuda_types = ctranslate2.get_supported_compute_types("cuda")
+            if cuda_types:
+                return "cuda", "float16"
+        except Exception:
             pass
         return "cpu", "int8"
     if device == "cuda":

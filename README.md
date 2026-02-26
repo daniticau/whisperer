@@ -14,9 +14,10 @@ A desktop app for recording and transcribing speech to text using faster-whisper
 
 ## Prerequisites
 
-- Python 3.10+
+- Python 3.10+ (3.11 or 3.12 recommended)
 - Node.js 18+
-- CUDA toolkit (optional, for GPU acceleration)
+- NVIDIA GPU + CUDA toolkit (optional, for GPU acceleration -- CPU works but is much slower)
+- On Linux: PortAudio (`sudo apt install libportaudio2`)
 
 ## Installation
 
@@ -47,6 +48,12 @@ npm run dev
 The app starts in the system tray. Hold the configured hotkey (default: Right Ctrl) to record, then release to transcribe. The transcribed text is automatically typed at your cursor position.
 
 Use Ctrl+1/2/3 to navigate between Dashboard, History, and Settings.
+
+## Notes
+
+- **First run downloads the whisper model** -- this takes a minute or two depending on your connection. Progress is shown in the dashboard.
+- **GPU vs CPU** -- if you have an NVIDIA GPU with CUDA installed, transcription uses it automatically. Without CUDA it falls back to CPU, which works but is noticeably slower. There's no error either way.
+- **Closing the window** keeps the app running in the system tray. Click the tray icon or right-click and select "Open Dashboard" to reopen it. Right-click and select "Quit" to fully exit.
 
 ## Architecture
 

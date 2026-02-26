@@ -23,6 +23,7 @@ from .hotkeys.listener import HotkeyListener
 from .history.database import HistoryDatabase
 from .history.migration import migrate_jsonl_to_sqlite
 from .output.typer import type_text
+from .output.focus import get_foreground_window
 
 
 class DictationApp:
@@ -35,6 +36,7 @@ class DictationApp:
         self.db = HistoryDatabase()
         self.ws_connections: list[WebSocket] = []
         self.recording_start_time: Optional[float] = None
+        self._target_hwnd = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None
 
         # Migrate old JSONL history if it exists
@@ -76,6 +78,7 @@ class DictationApp:
 
     def _on_hotkey_press(self):
         if self.capture and not self.capture.is_recording:
+            self._target_hwnd = get_foreground_window()
             self.capture.start_recording()
             self.recording_start_time = time.time()
             self._broadcast_sync({"type": "state_change", "state": "recording"})
@@ -84,18 +87,19 @@ class DictationApp:
         if self.capture and self.capture.is_recording:
             audio = self.capture.stop_recording()
             duration = time.time() - self.recording_start_time if self.recording_start_time else 0
+            target_hwnd = self._target_hwnd
             self.recording_start_time = None
             self._broadcast_sync({"type": "state_change", "state": "transcribing"})
 
             # Transcribe in background thread
             thread = threading.Thread(
                 target=self._transcribe_and_output,
-                args=(audio, duration),
+                args=(audio, duration, target_hwnd),
                 daemon=True,
             )
             thread.start()
 
-    def _transcribe_and_output(self, audio: np.ndarray, duration: float):
+    def _transcribe_and_output(self, audio: np.ndarray, duration: float, target_hwnd=None):
         try:
             if len(audio) == 0 or not self.engine:
                 self._broadcast_sync({"type": "state_change", "state": "idle"})
@@ -106,7 +110,7 @@ class DictationApp:
                 text = self.processor.process(text)
 
             if text:
-                type_text(text)
+                type_text(text, target_hwnd=target_hwnd)
 
                 if self.config.get("save_history", True):
                     self.db.log(
