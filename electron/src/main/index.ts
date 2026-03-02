@@ -129,7 +129,17 @@ app.whenReady().then(async () => {
   // Now start the Python sidecar in the background
   try {
     sidecar = new PythonSidecar();
-    pythonPort = await sidecar.start();
+    pythonPort = await sidecar.start((newPort) => {
+      // Python crashed and restarted with CPU mode
+      console.log(`Python restarted on port ${newPort}`);
+      pythonPort = newPort;
+      bridge = new IpcBridge(newPort, dashboardWindow!, indicatorWindow!);
+      bridge.connect().then(() => {
+        console.log("IPC bridge reconnected after restart");
+      }).catch((err) => {
+        console.error("Failed to reconnect after restart:", err);
+      });
+    });
     console.log(`Python sidecar running on port ${pythonPort}`);
 
     // Connect IPC bridge

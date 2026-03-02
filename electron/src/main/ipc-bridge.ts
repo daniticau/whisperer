@@ -23,6 +23,24 @@ export class IpcBridge {
   }
 
   async connect(): Promise<void> {
+    const maxRetries = 10;
+    const retryDelay = 300;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        await this.tryConnect();
+        return;
+      } catch {
+        if (attempt < maxRetries - 1) {
+          await new Promise((r) => setTimeout(r, retryDelay * (attempt + 1)));
+        }
+      }
+    }
+    // Final attempt — let it throw
+    await this.tryConnect();
+  }
+
+  private tryConnect(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.ws = new WebSocket(`ws://127.0.0.1:${this.port}/ws`);
 

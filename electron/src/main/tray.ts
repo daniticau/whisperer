@@ -39,7 +39,7 @@ function createTrayIcon() {
 export function createTray(dashboardWindow: BrowserWindow) {
   const icon = createTrayIcon();
   tray = new Tray(icon);
-  tray.setToolTip("Voice Dictation - Click to open");
+  tray.setToolTip("Whisperer - Click to open");
 
   const contextMenu = Menu.buildFromTemplate([
     {

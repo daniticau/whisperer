@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-Voice Dictation — a desktop app for recording and transcribing voice to text using faster-whisper. Electron + React frontend, FastAPI Python backend running as a sidecar process.
+Whisperer — a desktop app for recording and transcribing voice to text using faster-whisper. Electron + React frontend, FastAPI Python backend running as a sidecar process.
 
 ## Build & Run Commands
 
@@ -65,12 +65,12 @@ Hotkey press → Python `HotkeyListener` → `AudioCapture` records → release 
 - `hotkeys/listener.py` — pynput keyboard listener
 - `history/database.py` — SQLite with FTS5 full-text search
 - `output/typer.py` — clipboard paste via pyautogui
-- `config.py` — settings persisted to `~/.voice_dictation/config.json`
+- `config.py` — settings persisted to `~/.whisperer/config.json`
 
 ### Data Storage
 
-- Config: `~/.voice_dictation/config.json`
-- History: `~/.voice_dictation/history.db` (SQLite with `transcriptions` table + `transcriptions_fts` FTS5 virtual table)
+- Config: `~/.whisperer/config.json`
+- History: `~/.whisperer/history.db` (SQLite with `transcriptions` table + `transcriptions_fts` FTS5 virtual table)
 
 ## Key Implementation Details
 

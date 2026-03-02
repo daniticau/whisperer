@@ -1,1 +1,1 @@
-# Voice Dictation Python Backend
+# Whisperer Python Backend

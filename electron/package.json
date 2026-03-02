@@ -1,7 +1,7 @@
 {
-  "name": "voice-dictation",
+  "name": "whisperer",
   "version": "1.0.0",
-  "description": "Voice dictation desktop app powered by faster-whisper",
+  "description": "Whisperer — desktop speech-to-text powered by faster-whisper",
   "main": "dist/main/index.js",
   "license": "MIT",
   "scripts": {

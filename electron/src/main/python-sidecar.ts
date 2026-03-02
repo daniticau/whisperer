@@ -5,8 +5,15 @@ import * as path from "path";
 export class PythonSidecar {
   private process: ChildProcess | null = null;
   private port: number = 0;
+  private restartCount = 0;
+  private onRestart?: (port: number) => void;
 
-  async start(): Promise<number> {
+  async start(onRestart?: (port: number) => void): Promise<number> {
+    this.onRestart = onRestart;
+    return this.spawn();
+  }
+
+  private spawn(extraArgs: string[] = []): Promise<number> {
     return new Promise((resolve, reject) => {
       let command: string;
       let args: string[];
@@ -14,11 +21,11 @@ export class PythonSidecar {
 
       if (app.isPackaged) {
         command = path.join(process.resourcesPath, "python-backend", "python-backend.exe");
-        args = ["--port", "0"];
+        args = ["--port", "0", ...extraArgs];
         cwd = path.dirname(command);
       } else {
         command = "python";
-        args = ["-m", "python", "--port", "0"];
+        args = ["-m", "python", "--port", "0", ...extraArgs];
         cwd = path.resolve(__dirname, "../../..");
       }
 
@@ -58,6 +65,17 @@ export class PythonSidecar {
         if (!resolved) {
           resolved = true;
           reject(new Error(`Python sidecar exited with code ${code}`));
+        } else if (code && code !== 0 && this.restartCount < 1) {
+          // Native crash after startup — restart with CPU mode
+          this.restartCount++;
+          console.log("Python crashed, restarting with --device cpu...");
+          this.spawn(["--device", "cpu"])
+            .then((newPort) => {
+              this.onRestart?.(newPort);
+            })
+            .catch((err) => {
+              console.error("Failed to restart Python sidecar:", err);
+            });
         }
       });
 

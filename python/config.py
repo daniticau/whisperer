@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-CONFIG_DIR = Path.home() / ".voice_dictation"
+CONFIG_DIR = Path.home() / ".whisperer"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
 DEFAULT_CONFIG = {

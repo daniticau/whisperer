@@ -1,4 +1,4 @@
-# Voice Dictation
+# Whisperer
 
 A desktop app for recording and transcribing speech to text using faster-whisper. All processing happens locally on your machine.
 
@@ -23,8 +23,8 @@ A desktop app for recording and transcribing speech to text using faster-whisper
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/voice_dictation.git
-cd voice_dictation
+git clone https://github.com/YOUR_USERNAME/whisperer.git
+cd whisperer
 
 # Install Python dependencies
 pip install -r requirements.txt
@@ -65,7 +65,7 @@ Three processes work together:
 
 **Startup flow:** Electron creates windows, spawns `python -m python --port 0`, Python prints `SERVER_READY:PORT=<num>` to stdout, Electron connects via WebSocket with auto-reconnect.
 
-**Data storage:** Config at `~/.voice_dictation/config.json`, history at `~/.voice_dictation/history.db`.
+**Data storage:** Config at `~/.whisperer/config.json`, history at `~/.whisperer/history.db`.
 
 ## License
 

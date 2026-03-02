@@ -54,7 +54,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
             <Mic className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h1 className="text-sm font-semibold text-[#fafafa]">Voice Dictation</h1>
+            <h1 className="text-sm font-semibold text-[#fafafa]">Whisperer</h1>
             <div className="flex items-center gap-1.5 mt-0.5">
               <div className={`w-1.5 h-1.5 rounded-full ${
                 dictationState === "recording"

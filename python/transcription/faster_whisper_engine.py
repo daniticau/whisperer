@@ -1,3 +1,4 @@
+import subprocess
 import sys
 from typing import Optional
 
@@ -14,15 +15,28 @@ MODELS = {
 }
 
 
+def _probe_cuda_subprocess() -> bool:
+    """Test CUDA in a subprocess so a native crash doesn't kill the server."""
+    code = (
+        "import ctranslate2; "
+        "types = ctranslate2.get_supported_compute_types('cuda'); "
+        "assert types; "
+        "print('CUDA_OK')"
+    )
+    try:
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True, text=True, timeout=15,
+        )
+        return result.returncode == 0 and "CUDA_OK" in result.stdout
+    except Exception:
+        return False
+
+
 def _resolve_device(device: str, model_size: str) -> tuple[str, str]:
     if device == "auto":
-        try:
-            import ctranslate2
-            cuda_types = ctranslate2.get_supported_compute_types("cuda")
-            if cuda_types:
-                return "cuda", "float16"
-        except Exception:
-            pass
+        if _probe_cuda_subprocess():
+            return "cuda", "float16"
         return "cpu", "int8"
     if device == "cuda":
         return "cuda", "float16"

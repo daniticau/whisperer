@@ -161,7 +161,11 @@ async def lifespan(app: FastAPI):
 
     # Init in background thread to not block startup
     def init():
-        app_state.init_engine()
+        try:
+            app_state.init_engine()
+        except Exception as e:
+            print(f"[ERROR] Model loading failed: {e}", file=sys.stderr, flush=True)
+            app_state._broadcast_sync({"type": "error", "message": f"Model loading failed: {e}"})
         app_state.init_processor()
         app_state.init_capture()
         app_state.init_hotkeys()
@@ -291,12 +295,31 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=0)
+    parser.add_argument("--device", type=str, default=None,
+                        help="Force device: cpu, cuda, or auto")
     args = parser.parse_args()
 
     port = args.port or get_free_port()
-    print(f"SERVER_READY:PORT={port}", flush=True)
 
-    uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
+    # Apply device override before engine init
+    if args.device:
+        app_state.config["device"] = args.device
+
+    config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning")
+    server = uvicorn.Server(config)
+
+    async def serve_with_signal():
+        async def signal_ready():
+            while not server.started:
+                await asyncio.sleep(0.05)
+            print(f"SERVER_READY:PORT={port}", flush=True)
+
+        task = asyncio.create_task(signal_ready())
+        await server.serve()
+        if not task.done():
+            task.cancel()
+
+    asyncio.run(serve_with_signal())
 
 
 if __name__ == "__main__":
