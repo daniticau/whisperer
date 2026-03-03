@@ -25,6 +25,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.on("error", listener);
     return () => ipcRenderer.removeListener("error", listener);
   },
+  onPythonReconnected: (cb: () => void) => {
+    const listener = () => cb();
+    ipcRenderer.on("python-reconnected", listener);
+    return () => ipcRenderer.removeListener("python-reconnected", listener);
+  },
 
   // Settings
   getSettings: () => ipcRenderer.invoke("get-settings"),

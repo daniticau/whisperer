@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useDictationStore } from "../stores/dictationStore";
+import { useSettingsStore } from "../stores/settingsStore";
 import type { DictationState } from "../lib/types";
 
 export function useDictation() {
@@ -21,6 +22,12 @@ export function useDictation() {
       }),
       api.onError((message) => {
         store.setError(message);
+      }),
+      api.onPythonReconnected(() => {
+        // Python crashed and restarted — re-fetch settings
+        api.getSettings().then((settings) => {
+          useSettingsStore.getState().setSettings(settings);
+        });
       }),
     ];
 

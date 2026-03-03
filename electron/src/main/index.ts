@@ -133,9 +133,15 @@ app.whenReady().then(async () => {
       // Python crashed and restarted with CPU mode
       console.log(`Python restarted on port ${newPort}`);
       pythonPort = newPort;
+      // Tear down old bridge so it stops reconnecting to the dead port
+      bridge?.disconnect();
       bridge = new IpcBridge(newPort, dashboardWindow!, indicatorWindow!);
       bridge.connect().then(() => {
         console.log("IPC bridge reconnected after restart");
+        // Tell renderer to re-fetch data now that Python is back
+        if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+          dashboardWindow.webContents.send("python-reconnected");
+        }
       }).catch((err) => {
         console.error("Failed to reconnect after restart:", err);
       });

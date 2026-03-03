@@ -23,8 +23,8 @@ A desktop app for recording and transcribing speech to text using faster-whisper
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/whisperer.git
-cd whisperer
+git clone https://github.com/daniticau/voice_dictation.git
+cd voice_dictation
 
 # Install Python dependencies
 pip install -r requirements.txt
@@ -45,7 +45,7 @@ npm start
 npm run dev
 ```
 
-The app starts in the system tray. Hold the configured hotkey (default: Right Ctrl) to record, then release to transcribe. The transcribed text is automatically typed at your cursor position.
+The app starts in the system tray. Hold the configured hotkey (default: F4) to record, then release to transcribe. The transcribed text is automatically typed at your cursor position.
 
 Use Ctrl+1/2/3 to navigate between Dashboard, History, and Settings.
 

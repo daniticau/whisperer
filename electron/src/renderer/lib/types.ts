@@ -81,6 +81,7 @@ export interface ElectronAPI {
   onTranscriptionResult: (cb: (result: TranscriptionResult) => void) => () => void;
   onModelLoading: (cb: (progress: number) => void) => () => void;
   onError: (cb: (message: string) => void) => () => void;
+  onPythonReconnected: (cb: () => void) => () => void;
   getSettings: () => Promise<Settings>;
   updateSettings: (settings: Partial<Settings>) => Promise<Settings>;
   getHistory: (params: Record<string, string>) => Promise<HistoryResponse>;

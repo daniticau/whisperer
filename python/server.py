@@ -199,8 +199,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
             elif msg_type == "reload_model":
                 def reload():
-                    app_state.init_engine()
-                    app_state._broadcast_sync({"type": "model_loaded"})
+                    try:
+                        app_state.init_engine()
+                        app_state._broadcast_sync({"type": "model_loaded"})
+                    except Exception as e:
+                        print(f"[ERROR] Model reload failed: {e}", file=sys.stderr, flush=True)
+                        app_state._broadcast_sync({"type": "model_loading", "progress": 1.0})
+                        app_state._broadcast_sync({"type": "error", "message": f"Model loading failed: {e}"})
                 threading.Thread(target=reload, daemon=True).start()
 
             elif msg_type == "start_recording":
@@ -259,7 +264,7 @@ async def get_daily_stats(days: int = Query(30, ge=1, le=365)):
 
 @app.get("/api/devices")
 async def get_devices():
-    return list_input_devices()
+    return await asyncio.to_thread(list_input_devices)
 
 
 @app.get("/api/models")
@@ -273,8 +278,13 @@ async def get_models():
 @app.post("/api/model/reload")
 async def reload_model():
     def reload():
-        app_state.init_engine()
-        app_state._broadcast_sync({"type": "model_loaded"})
+        try:
+            app_state.init_engine()
+            app_state._broadcast_sync({"type": "model_loaded"})
+        except Exception as e:
+            print(f"[ERROR] Model reload failed: {e}", file=sys.stderr, flush=True)
+            app_state._broadcast_sync({"type": "model_loading", "progress": 1.0})
+            app_state._broadcast_sync({"type": "error", "message": f"Model loading failed: {e}"})
     threading.Thread(target=reload, daemon=True).start()
     return {"status": "reloading"}
 

@@ -1,5 +1,6 @@
 import subprocess
 import sys
+import threading
 from typing import Optional
 
 import numpy as np
@@ -8,10 +9,11 @@ from faster_whisper import WhisperModel
 from .engine import TranscriptionEngine
 
 MODELS = {
-    "base.en":   {"vram_mb": 150,  "desc": "Fastest, basic accuracy"},
-    "small.en":  {"vram_mb": 500,  "desc": "Good balance of speed and accuracy"},
-    "medium.en": {"vram_mb": 1500, "desc": "High accuracy, slower"},
-    "large-v3":  {"vram_mb": 3000, "desc": "Best accuracy, requires GPU"},
+    "base.en":        {"model_id": "base.en",   "vram_mb": 150,  "desc": "Fastest, basic accuracy"},
+    "small.en":       {"model_id": "small.en",  "vram_mb": 500,  "desc": "Good balance of speed and accuracy"},
+    "medium.en":      {"model_id": "medium.en", "vram_mb": 1500, "desc": "High accuracy, slower"},
+    "distil-large-v3": {"model_id": "Systran/faster-distil-whisper-large-v3", "vram_mb": 1500, "desc": "Distilled — fast with near-large accuracy"},
+    "large-v3":       {"model_id": "large-v3",  "vram_mb": 3000, "desc": "Best accuracy, requires GPU"},
 }
 
 
@@ -48,6 +50,7 @@ class FasterWhisperEngine(TranscriptionEngine):
                  compute_type: str = "auto", language: str = "en",
                  custom_dictionary: Optional[list[str]] = None):
         self.model_size = model_size
+        self.model_id = MODELS[model_size]["model_id"] if model_size in MODELS else model_size
         self.language = language
         self.custom_dictionary = custom_dictionary or []
         self.model: Optional[WhisperModel] = None
@@ -61,18 +64,37 @@ class FasterWhisperEngine(TranscriptionEngine):
     def load(self, progress_callback=None) -> None:
         print(f"Loading Whisper model '{self.model_size}' on {self.device} ({self.compute_type})...")
         if progress_callback:
-            progress_callback(0.1)
+            progress_callback(0.05)
 
-        self.model = WhisperModel(
-            self.model_size,
-            device=self.device,
-            compute_type=self.compute_type,
-        )
+        # Tick progress gradually while WhisperModel downloads/loads
+        done = threading.Event()
+        if progress_callback:
+            def _tick():
+                p = 0.08
+                while not done.is_set():
+                    progress_callback(p)
+                    p += (0.75 - p) * 0.04
+                    done.wait(0.4)
+            ticker = threading.Thread(target=_tick, daemon=True)
+            ticker.start()
+
+        try:
+            self.model = WhisperModel(
+                self.model_id,
+                device=self.device,
+                compute_type=self.compute_type,
+            )
+        finally:
+            done.set()
+            if progress_callback:
+                ticker.join(timeout=1)
 
         if progress_callback:
-            progress_callback(0.8)
+            progress_callback(0.85)
 
         # Warm up
+        if progress_callback:
+            progress_callback(0.9)
         dummy = np.zeros(16000, dtype=np.float32)
         list(self.model.transcribe(dummy)[0])
 

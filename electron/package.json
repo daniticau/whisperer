@@ -4,6 +4,12 @@
   "description": "Whisperer — desktop speech-to-text powered by faster-whisper",
   "main": "dist/main/index.js",
   "license": "MIT",
+  "author": "daniticau",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daniticau/voice_dictation.git"
+  },
+  "homepage": "https://github.com/daniticau/voice_dictation",
   "scripts": {
     "dev": "concurrently \"npm run dev:main\" \"npm run dev:renderer\"",
     "dev:main": "tsc -p tsconfig.main.json --watch",

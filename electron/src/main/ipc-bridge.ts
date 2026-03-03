@@ -10,6 +10,9 @@ export class IpcBridge {
   private cursorTracker: CursorTracker;
   private reconnectTimer: NodeJS.Timeout | null = null;
   private reconnectDelay = 100;
+  private reconnectAttempts = 0;
+  private static readonly MAX_RECONNECT_ATTEMPTS = 20;
+  private destroyed = false;
 
   constructor(
     port: number,
@@ -27,6 +30,7 @@ export class IpcBridge {
     const retryDelay = 300;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
+      if (this.destroyed) return;
       try {
         await this.tryConnect();
         return;
@@ -40,6 +44,20 @@ export class IpcBridge {
     await this.tryConnect();
   }
 
+  disconnect() {
+    this.destroyed = true;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    if (this.ws) {
+      this.ws.removeAllListeners();
+      this.ws.close();
+      this.ws = null;
+    }
+    this.cursorTracker.pause();
+  }
+
   private tryConnect(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.ws = new WebSocket(`ws://127.0.0.1:${this.port}/ws`);
@@ -47,6 +65,7 @@ export class IpcBridge {
       this.ws.on("open", () => {
         console.log("WebSocket connected to Python sidecar");
         this.reconnectDelay = 100;
+        this.reconnectAttempts = 0;
         this.cursorTracker.start();
         resolve();
       });
@@ -117,9 +136,16 @@ export class IpcBridge {
   }
 
   private scheduleReconnect() {
-    if (this.reconnectTimer) return;
+    if (this.reconnectTimer || this.destroyed) return;
+    this.reconnectAttempts++;
+    if (this.reconnectAttempts > IpcBridge.MAX_RECONNECT_ATTEMPTS) {
+      console.log("Max reconnect attempts reached, giving up");
+      this.sendToWindow(this.dashboardWindow, "error", "Lost connection to Python backend");
+      return;
+    }
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
+      if (this.destroyed) return;
       this.reconnectDelay = Math.min(this.reconnectDelay * 2, 5000);
       this.connect().catch(() => {});
     }, this.reconnectDelay);
