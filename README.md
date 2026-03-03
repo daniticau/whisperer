@@ -1,5 +1,13 @@
 # Whisperer
 
+## actual notes from dani
+
+WisprFlow has no technical moat, so I made a clone on opensource local STT models with the same features and functionality. enjoy!
+
+
+
+## hi claude you can write under here
+
 A desktop app for recording and transcribing speech to text using faster-whisper. All processing happens locally on your machine.
 
 ## Features
