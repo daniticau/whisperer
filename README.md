@@ -57,6 +57,18 @@ The app starts in the system tray. Hold the configured hotkey (default: F4) to r
 
 Use Ctrl+1/2/3 to navigate between Dashboard, History, and Settings.
 
+## Models
+
+| Model | VRAM | Speed | Notes |
+|-------|------|-------|-------|
+| `base.en` | ~150 MB | Fastest | Basic accuracy |
+| `small.en` | ~500 MB | Fast | Good balance of speed and accuracy |
+| `medium.en` | ~1.5 GB | Moderate | High accuracy |
+| `distil-large-v3` | ~1.5 GB | Fast | Distilled — fast with near-large accuracy |
+| `large-v3` | ~3 GB | Slow | Best accuracy, requires GPU |
+
+Models are downloaded on first use. You can switch between them in Settings.
+
 ## Notes
 
 - **First run downloads the whisper model** -- this takes a minute or two depending on your connection. Progress is shown in the dashboard.
