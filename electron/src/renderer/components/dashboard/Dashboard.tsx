@@ -15,8 +15,18 @@ export function Dashboard() {
     const api = window.electronAPI;
     if (!api) return;
 
-    api.getHistory({ limit: "10", sort: "desc" }).then((res) => {
-      setRecentEntries(res.items);
+    const loadRecentHistory = async () => {
+      try {
+        const res = await api.getHistory({ limit: "10", sort: "desc" });
+        setRecentEntries(res.items);
+      } catch {
+        setRecentEntries([]);
+      }
+    };
+
+    void loadRecentHistory();
+    return api.onPythonReconnected(() => {
+      void loadRecentHistory();
     });
   }, []);
 
@@ -27,9 +37,13 @@ export function Dashboard() {
       refresh();
       const api = window.electronAPI;
       if (api) {
-        api.getHistory({ limit: "10", sort: "desc" }).then((res) => {
-          setRecentEntries(res.items);
-        });
+        api.getHistory({ limit: "10", sort: "desc" })
+          .then((res) => {
+            setRecentEntries(res.items);
+          })
+          .catch(() => {
+            setRecentEntries([]);
+          });
       }
     }
   }, [lastResult]);

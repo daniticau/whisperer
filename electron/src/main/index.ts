@@ -14,6 +14,52 @@ let sidecar: PythonSidecar | null = null;
 let bridge: IpcBridge | null = null;
 let pythonPort: number = 0;
 
+const defaultSettings = {
+  hotkey: "f4",
+  model_size: "small.en",
+  language: "en",
+  device: "auto",
+  compute_type: "auto",
+  audio_device: null,
+  sample_rate: 16000,
+  channels: 1,
+  tone: "neutral",
+  filler_removal: true,
+  smart_punctuation: true,
+  backtracking_correction: true,
+  custom_dictionary: [],
+  voice_snippets: {},
+  context_awareness: false,
+  save_history: true,
+  auto_start: false,
+  theme: "dark",
+  indicator_position: null,
+};
+
+const defaultHistory = { items: [], total: 0, page: 1, limit: 50 };
+const defaultStats = {
+  words_today: 0,
+  dictations_today: 0,
+  words_total: 0,
+  dictations_total: 0,
+  total_duration_seconds: 0,
+  avg_words_per_dictation: 0,
+  time_saved_minutes: 0,
+};
+
+async function requestWithFallback<T>(
+  label: string,
+  fallback: T,
+  request: () => Promise<T>
+): Promise<T> {
+  try {
+    return await request();
+  } catch (error) {
+    console.error(`${label} failed:`, error);
+    return fallback;
+  }
+}
+
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
@@ -81,46 +127,69 @@ app.whenReady().then(async () => {
     dashboardWindow?.hide();
   });
 
-  ipcMain.handle("get-settings", async () => {
-    return bridge?.request("GET", "/api/settings") ?? null;
-  });
+  ipcMain.handle("get-settings", async () =>
+    requestWithFallback("get-settings", defaultSettings, async () => {
+      if (!bridge) return defaultSettings;
+      return bridge.request("GET", "/api/settings");
+    })
+  );
 
-  ipcMain.handle("update-settings", async (_e, settings: object) => {
-    return bridge?.request("PUT", "/api/settings", settings) ?? null;
-  });
+  ipcMain.handle("update-settings", async (_e, settings: object) =>
+    requestWithFallback("update-settings", defaultSettings, async () => {
+      if (!bridge) return defaultSettings;
+      return bridge.request("PUT", "/api/settings", settings);
+    })
+  );
 
-  ipcMain.handle("get-history", async (_e, params: Record<string, string>) => {
-    const query = new URLSearchParams(params).toString();
-    return bridge?.request("GET", `/api/history?${query}`) ?? { items: [], total: 0, page: 1, limit: 50 };
-  });
+  ipcMain.handle("get-history", async (_e, params: Record<string, string>) =>
+    requestWithFallback("get-history", defaultHistory, async () => {
+      const query = new URLSearchParams(params).toString();
+      if (!bridge) return defaultHistory;
+      return bridge.request("GET", `/api/history?${query}`);
+    })
+  );
 
-  ipcMain.handle("get-stats", async () => {
-    return bridge?.request("GET", "/api/stats") ?? {
-      words_today: 0, dictations_today: 0, words_total: 0,
-      dictations_total: 0, total_duration_seconds: 0,
-      avg_words_per_dictation: 0, time_saved_minutes: 0,
-    };
-  });
+  ipcMain.handle("get-stats", async () =>
+    requestWithFallback("get-stats", defaultStats, async () => {
+      if (!bridge) return defaultStats;
+      return bridge.request("GET", "/api/stats");
+    })
+  );
 
-  ipcMain.handle("get-daily-stats", async (_e, days: number) => {
-    return bridge?.request("GET", `/api/stats/daily?days=${days}`) ?? [];
-  });
+  ipcMain.handle("get-daily-stats", async (_e, days: number) =>
+    requestWithFallback("get-daily-stats", [], async () => {
+      if (!bridge) return [];
+      return bridge.request("GET", `/api/stats/daily?days=${days}`);
+    })
+  );
 
-  ipcMain.handle("get-devices", async () => {
-    return bridge?.request("GET", "/api/devices") ?? [];
-  });
+  ipcMain.handle("get-devices", async () =>
+    requestWithFallback("get-devices", [], async () => {
+      if (!bridge) return [];
+      return bridge.request("GET", "/api/devices");
+    })
+  );
 
-  ipcMain.handle("get-models", async () => {
-    return bridge?.request("GET", "/api/models") ?? { available: {}, current: "small.en" };
-  });
+  ipcMain.handle("get-models", async () =>
+    requestWithFallback("get-models", { available: {}, current: "small.en" }, async () => {
+      if (!bridge) return { available: {}, current: "small.en" };
+      return bridge.request("GET", "/api/models");
+    })
+  );
 
-  ipcMain.handle("reload-model", async () => {
-    return bridge?.request("POST", "/api/model/reload") ?? null;
-  });
+  ipcMain.handle("reload-model", async () =>
+    requestWithFallback("reload-model", null, async () => {
+      if (!bridge) return null;
+      return bridge.request("POST", "/api/model/reload");
+    })
+  );
 
-  ipcMain.handle("delete-history-entry", async (_e, id: number) => {
-    return bridge?.request("DELETE", `/api/history/${id}`) ?? null;
-  });
+  ipcMain.handle("delete-history-entry", async (_e, id: number) =>
+    requestWithFallback("delete-history-entry", null, async () => {
+      if (!bridge) return null;
+      return bridge.request("DELETE", `/api/history/${id}`);
+    })
+  );
 
   ipcMain.on("python-command", (_e, cmd: object) => {
     bridge?.sendWsMessage(cmd);
@@ -152,6 +221,9 @@ app.whenReady().then(async () => {
     bridge = new IpcBridge(pythonPort, dashboardWindow!, indicatorWindow!);
     await bridge.connect();
     console.log("IPC bridge connected");
+    if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+      dashboardWindow.webContents.send("python-reconnected");
+    }
   } catch (err) {
     console.error("Failed to start Python sidecar:", err);
     // App still runs - UI shows but dictation won't work

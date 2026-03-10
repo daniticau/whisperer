@@ -17,6 +17,17 @@ export function useStats() {
       ]);
       setStats(s);
       setDailyStats(d);
+    } catch {
+      setStats({
+        words_today: 0,
+        dictations_today: 0,
+        words_total: 0,
+        dictations_total: 0,
+        total_duration_seconds: 0,
+        avg_words_per_dictation: 0,
+        time_saved_minutes: 0,
+      });
+      setDailyStats([]);
     } finally {
       setLoading(false);
     }
@@ -24,6 +35,15 @@ export function useStats() {
 
   useEffect(() => {
     refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (!api) return;
+
+    return api.onPythonReconnected(() => {
+      void refresh();
+    });
   }, [refresh]);
 
   return { stats, dailyStats, loading, refresh };

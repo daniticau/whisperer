@@ -26,8 +26,10 @@ export function useDictation() {
       api.onPythonReconnected(() => {
         // Python crashed and restarted — re-fetch settings
         api.getSettings().then((settings) => {
-          useSettingsStore.getState().setSettings(settings);
-        });
+          if (settings) {
+            useSettingsStore.getState().setSettings(settings);
+          }
+        }).catch(() => {});
       }),
     ];
 

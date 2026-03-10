@@ -1,9 +1,17 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { HistoryEntry, HistoryResponse } from "../lib/types";
 
 export function useHistory() {
   const [data, setData] = useState<HistoryResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const lastParamsRef = useRef<{
+    page?: number;
+    limit?: number;
+    search?: string;
+    sort?: string;
+    date_from?: string;
+    date_to?: string;
+  }>({});
 
   const fetchHistory = useCallback(
     async (params: {
@@ -17,6 +25,7 @@ export function useHistory() {
       const api = window.electronAPI;
       if (!api) return;
 
+      lastParamsRef.current = params;
       setLoading(true);
       try {
         const queryParams: Record<string, string> = {};
@@ -29,12 +38,28 @@ export function useHistory() {
 
         const result = await api.getHistory(queryParams);
         setData(result);
+      } catch {
+        setData({
+          items: [],
+          total: 0,
+          page: params.page ?? 1,
+          limit: params.limit ?? 50,
+        });
       } finally {
         setLoading(false);
       }
     },
     []
   );
+
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (!api) return;
+
+    return api.onPythonReconnected(() => {
+      void fetchHistory(lastParamsRef.current);
+    });
+  }, [fetchHistory]);
 
   const deleteEntry = useCallback(
     async (id: number) => {
