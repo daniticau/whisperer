@@ -2,7 +2,7 @@
 
 ## actual notes from dani
 
-WisprFlow has no technical moat, so I made a clone on opensource local STT models with the same features and functionality. enjoy!
+I made a wisprflow clone on opensource local STT models with similar features and functionality. enjoy!
 
 
 
